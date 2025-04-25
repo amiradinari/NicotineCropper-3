@@ -1,16 +1,18 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import StepIndicator from "@/components/StepIndicator";
 import { useAppContext } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
 import { createCircleCrop } from "@/lib/imageUtils";
 import { useToast } from "@/hooks/use-toast";
-import { Download } from "lucide-react";
+import { Download, Eye, EyeOff } from "lucide-react";
+import TextExtractionPanel from "@/components/TextExtractionPanel";
 
 export default function Result() {
   const [, setLocation] = useLocation();
-  const { setStep, photoData, croppedAreaPixels } = useAppContext();
+  const { setStep, photoData, croppedAreaPixels, isTextExtractionEnabled, setIsTextExtractionEnabled } = useAppContext();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [croppedImageData, setCroppedImageData] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Generate the cropped image when the component mounts
@@ -38,6 +40,9 @@ export default function Result() {
           croppedAreaPixels,
           canvas
         );
+        
+        // Save cropped image data URL for text extraction
+        setCroppedImageData(canvas.toDataURL("image/png"));
       } catch (error) {
         console.error("Error creating circular crop:", error);
         toast({
@@ -83,6 +88,10 @@ export default function Result() {
     setLocation("/");
   };
 
+  const toggleTextExtraction = () => {
+    setIsTextExtractionEnabled(prev => !prev);
+  };
+
   if (!photoData || !croppedAreaPixels) {
     return null; // Will redirect via useEffect
   }
@@ -116,6 +125,28 @@ export default function Result() {
             <Download className="mr-2 h-5 w-5" />
             Save Image
           </Button>
+          
+          <Button 
+            variant="outline"
+            onClick={toggleTextExtraction}
+            className="border border-gray-300 text-gray-700 py-3 flex items-center justify-center"
+          >
+            {isTextExtractionEnabled ? (
+              <>
+                <EyeOff className="mr-2 h-5 w-5" />
+                Hide Text Extraction
+              </>
+            ) : (
+              <>
+                <Eye className="mr-2 h-5 w-5" />
+                Extract Text from Image
+              </>
+            )}
+          </Button>
+          
+          {isTextExtractionEnabled && croppedImageData && (
+            <TextExtractionPanel imageData={croppedImageData} />
+          )}
           
           <Button 
             variant="outline"

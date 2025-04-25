@@ -14,6 +14,10 @@ interface AppContextType {
   setPhotoData: (data: PhotoData) => void;
   croppedAreaPixels: Area | null;
   setCroppedAreaPixels: (area: Area | null) => void;
+  extractedText: string;
+  setExtractedText: (text: string) => void;
+  isTextExtractionEnabled: boolean;
+  setIsTextExtractionEnabled: (enabled: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -22,6 +26,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState(1);
   const [photoData, setPhotoData] = useState<PhotoData>(null);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [extractedText, setExtractedText] = useState<string>("");
+  const [isTextExtractionEnabled, setIsTextExtractionEnabled] = useState<boolean>(false);
 
   return (
     <AppContext.Provider
@@ -32,6 +38,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setPhotoData,
         croppedAreaPixels,
         setCroppedAreaPixels,
+        extractedText,
+        setExtractedText,
+        isTextExtractionEnabled,
+        setIsTextExtractionEnabled,
       }}
     >
       {children}
