@@ -10,7 +10,8 @@ interface Area {
 export const createCircleCrop = (
   imageSrc: string,
   croppedAreaPixels: Area,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
+  shouldFlip: boolean = true // Default to true to fix mirrored front-facing camera
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
     const image = new Image();
@@ -34,18 +35,44 @@ export const createCircleCrop = (
       ctx.closePath();
       ctx.clip();
       
-      // Draw the image with the crop position
-      ctx.drawImage(
-        image,
-        croppedAreaPixels.x, // source x
-        croppedAreaPixels.y, // source y
-        croppedAreaPixels.width, // source width
-        croppedAreaPixels.height, // source height
-        0, // dest x
-        0, // dest y
-        size, // dest width
-        size // dest height
-      );
+      // If this is a mirrored image (from front-facing camera), flip it back
+      if (shouldFlip) {
+        // Save the current context state
+        ctx.save();
+        
+        // Flip the context horizontally
+        ctx.translate(size, 0);
+        ctx.scale(-1, 1);
+        
+        // Draw the image with the crop position (with flipped coordinates)
+        ctx.drawImage(
+          image,
+          croppedAreaPixels.x, // source x
+          croppedAreaPixels.y, // source y
+          croppedAreaPixels.width, // source width
+          croppedAreaPixels.height, // source height
+          0, // dest x (now at right edge because of flip)
+          0, // dest y
+          size, // dest width
+          size // dest height
+        );
+        
+        // Restore the context to its original state
+        ctx.restore();
+      } else {
+        // Normal drawing without flipping
+        ctx.drawImage(
+          image,
+          croppedAreaPixels.x, // source x
+          croppedAreaPixels.y, // source y
+          croppedAreaPixels.width, // source width
+          croppedAreaPixels.height, // source height
+          0, // dest x
+          0, // dest y
+          size, // dest width
+          size // dest height
+        );
+      }
       
       resolve();
     };

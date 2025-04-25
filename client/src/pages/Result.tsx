@@ -10,7 +10,7 @@ import TextExtractionPanel from "@/components/TextExtractionPanel";
 
 export default function Result() {
   const [, setLocation] = useLocation();
-  const { setStep, photoData, croppedAreaPixels, isTextExtractionEnabled, setIsTextExtractionEnabled } = useAppContext();
+  const { setStep, photoData, croppedAreaPixels, isTextExtractionEnabled, setIsTextExtractionEnabled, isFrontCamera } = useAppContext();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [croppedImageData, setCroppedImageData] = useState<string | null>(null);
   const { toast } = useToast();

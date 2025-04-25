@@ -25,6 +25,8 @@ interface AppContextType {
   setExtractedText: (text: string) => void;
   isTextExtractionEnabled: boolean;
   setIsTextExtractionEnabled: (enabled: boolean) => void;
+  isFrontCamera: boolean;
+  setIsFrontCamera: (isFront: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,6 +37,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");
   const [isTextExtractionEnabled, setIsTextExtractionEnabled] = useState<boolean>(false);
+  const [isFrontCamera, setIsFrontCamera] = useState<boolean>(true); // Default to front camera
 
   return (
     <AppContext.Provider
@@ -49,6 +52,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setExtractedText,
         isTextExtractionEnabled,
         setIsTextExtractionEnabled,
+        isFrontCamera,
+        setIsFrontCamera,
       }}
     >
       {children}

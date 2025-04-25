@@ -4,6 +4,7 @@ import Webcam from "react-webcam";
 import CircleOverlay from "./CircleOverlay";
 import { useCamera } from "@/hooks/useCamera";
 import { useToast } from "@/hooks/use-toast";
+import { useAppContext } from "@/context/AppContext";
 import { Loader, RefreshCw } from "lucide-react";
 
 interface CameraViewProps {
@@ -13,6 +14,7 @@ interface CameraViewProps {
 export default function CameraView({ onCapture }: CameraViewProps) {
   const webcamRef = useRef<Webcam>(null);
   const { toast } = useToast();
+  const { setIsFrontCamera } = useAppContext();
   const [isCameraLoading, setIsCameraLoading] = useState(true);
   
   const {
@@ -22,6 +24,11 @@ export default function CameraView({ onCapture }: CameraViewProps) {
     requestCameraPermission,
     toggleFacingMode,
   } = useCamera();
+
+  // Update the app context when the facing mode changes
+  useEffect(() => {
+    setIsFrontCamera(facingMode === "user");
+  }, [facingMode, setIsFrontCamera]);
 
   useEffect(() => {
     // Auto-request camera permission when component mounts
