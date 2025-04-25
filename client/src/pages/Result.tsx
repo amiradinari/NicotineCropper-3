@@ -149,9 +149,9 @@ export default function Result() {
           {isTextExtractionEnabled && croppedImageData && (
             <>
               <TensorflowTextExtractionPanel imageData={croppedImageData} />
-              <div className="mt-3 py-2 border-t border-gray-200">
+              <div className="mt-4 py-2 border-t border-gray-200">
                 <p className="text-xs text-center text-gray-500 mb-2">
-                  Alternative text extraction method
+                  Alternative text extraction method (less accurate for small text)
                 </p>
                 <TextExtractionPanel imageData={croppedImageData} />
               </div>

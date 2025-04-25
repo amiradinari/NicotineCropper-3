@@ -153,7 +153,7 @@ export default function TensorflowTextExtractionPanel({ imageData }: TensorflowT
             <TabsContent value="text" className="mt-2">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center">
-                  <h3 className="text-sm font-medium text-gray-700">Detected Text</h3>
+                  <h3 className="text-sm font-medium text-gray-700">Extracted Text</h3>
                   {textRegions.length > 0 && (
                     <Badge variant="outline" className="ml-2 text-xs bg-blue-50">
                       {textRegions.length} region{textRegions.length !== 1 ? 's' : ''} analyzed
@@ -188,6 +188,18 @@ export default function TensorflowTextExtractionPanel({ imageData }: TensorflowT
                     <Check className="h-3 w-3 mr-1 text-green-500" />
                     Auto-corrected common OCR errors
                   </p>
+                  {textRegions.length > 0 && (
+                    <>
+                      <p className="flex items-center mt-1">
+                        <Check className="h-3 w-3 mr-1 text-green-500" />
+                        Processed entire image and specific regions including edges
+                      </p>
+                      <p className="flex items-center mt-1">
+                        <Check className="h-3 w-3 mr-1 text-green-500" />
+                        Special attention to small text in top/bottom regions
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </TabsContent>
@@ -217,10 +229,11 @@ export default function TensorflowTextExtractionPanel({ imageData }: TensorflowT
                 <div className="mt-2 text-xs text-gray-500">
                   <p>Image optimization techniques applied:</p>
                   <ul className="list-disc list-inside ml-1 mt-1">
-                    <li>Contrast & brightness adjustment</li>
-                    <li>Grayscale conversion</li>
-                    <li>Edge enhancement</li>
-                    <li>Noise reduction</li>
+                    <li>Contrast & brightness adjustment for small text</li>
+                    <li>Edge enhancement for text boundaries</li>
+                    <li>Special processing for top/bottom edges</li>
+                    <li>Multiple image variants tested (10+ variants)</li>
+                    <li>Small text detection with high sensitivity</li>
                   </ul>
                 </div>
               </div>

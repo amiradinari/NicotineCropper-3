@@ -256,6 +256,44 @@ export async function createEnhancedImageVariants(imageData: string): Promise<st
       threshold: 180
     }));
     
+    // Special for small text - very high contrast and sharp
+    variants.push(await enhanceImageForTextRecognition(imageData, {
+      grayscale: true,
+      sharpen: true,
+      contrast: 2.5,
+      brightness: 0,
+      despeckle: true
+    }));
+    
+    // Small dark text on light background - common in product packaging
+    variants.push(await enhanceImageForTextRecognition(imageData, {
+      grayscale: true,
+      contrast: 3.0,
+      brightness: -5,
+      sharpen: true,
+      binarize: true,
+      threshold: 100 // Lower threshold to preserve small dark text
+    }));
+    
+    // Small light text on dark background - also common in packaging
+    variants.push(await enhanceImageForTextRecognition(imageData, {
+      grayscale: true,
+      contrast: 3.0,
+      brightness: 15,
+      sharpen: true,
+      binarize: true,
+      threshold: 150 // Higher threshold to preserve small light text
+    }));
+    
+    // Edge-enhanced for text boundaries
+    variants.push(await enhanceImageForTextRecognition(imageData, {
+      grayscale: true,
+      sharpen: true,
+      contrast: 2.2,
+      brightness: 0,
+      binarize: false
+    }));
+    
   } catch (error) {
     console.error("Error creating image variants:", error);
     // Return at least the original image if enhancement fails

@@ -134,23 +134,27 @@ export function useTensorflowTextExtraction() {
     const regions: Array<{x: number, y: number, width: number, height: number}> = [];
     const data = imageData.data;
     
-    // Simple approach: divide the image into a grid and check for high-contrast areas
-    const gridSize = 4; // Divide the image into a 4x4 grid
-    const cellWidth = Math.floor(width / gridSize);
-    const cellHeight = Math.floor(height / gridSize);
+    // First approach: Use a finer grid to detect small text areas
+    const fineGridSize = 8; // Divide the image into an 8x8 grid for finer detection
+    const fineCellWidth = Math.floor(width / fineGridSize);
+    const fineCellHeight = Math.floor(height / fineGridSize);
     
-    for (let gx = 0; gx < gridSize; gx++) {
-      for (let gy = 0; gy < gridSize; gy++) {
-        const cellX = gx * cellWidth;
-        const cellY = gy * cellHeight;
+    // Lower variance threshold for detecting smaller text
+    const smallTextThreshold = 25; // Lower threshold for small text detection
+    
+    // First pass - detect small text regions with a finer grid
+    for (let gx = 0; gx < fineGridSize; gx++) {
+      for (let gy = 0; gy < fineGridSize; gy++) {
+        const cellX = gx * fineCellWidth;
+        const cellY = gy * fineCellHeight;
         
         // Calculate contrast in this cell
         let totalPixels = 0;
         let sumBrightness = 0;
         let sumVariance = 0;
         
-        for (let y = cellY; y < cellY + cellHeight && y < height; y++) {
-          for (let x = cellX; x < cellX + cellWidth && x < width; x++) {
+        for (let y = cellY; y < cellY + fineCellHeight && y < height; y++) {
+          for (let x = cellX; x < cellX + fineCellWidth && x < width; x++) {
             const idx = (y * width + x) * 4;
             const r = data[idx];
             const g = data[idx + 1];
@@ -165,8 +169,8 @@ export function useTensorflowTextExtraction() {
         const avgBrightness = sumBrightness / totalPixels;
         
         // Calculate variance (measure of contrast)
-        for (let y = cellY; y < cellY + cellHeight && y < height; y++) {
-          for (let x = cellX; x < cellX + cellWidth && x < width; x++) {
+        for (let y = cellY; y < cellY + fineCellHeight && y < height; y++) {
+          for (let x = cellX; x < cellX + fineCellWidth && x < width; x++) {
             const idx = (y * width + x) * 4;
             const r = data[idx];
             const g = data[idx + 1];
@@ -179,19 +183,60 @@ export function useTensorflowTextExtraction() {
         
         const variance = Math.sqrt(sumVariance / totalPixels);
         
-        // If cell has high variance (contrast), it might contain text
-        if (variance > 40) { // Threshold determined empirically
+        // If cell has sufficient variance (contrast), it might contain text
+        if (variance > smallTextThreshold) {
           regions.push({
             x: cellX,
             y: cellY,
-            width: cellWidth,
-            height: cellHeight
+            width: fineCellWidth,
+            height: fineCellHeight
           });
         }
       }
     }
     
-    // Merge adjacent regions
+    // Second approach: Add specific edge regions to ensure we capture text at the edges
+    // Top region
+    regions.push({
+      x: 0,
+      y: 0,
+      width: width,
+      height: Math.floor(height * 0.2) // Top 20%
+    });
+    
+    // Bottom region - often contains flavor text or product details
+    regions.push({
+      x: 0,
+      y: Math.floor(height * 0.8),
+      width: width,
+      height: Math.floor(height * 0.2) // Bottom 20%
+    });
+    
+    // Left region
+    regions.push({
+      x: 0,
+      y: 0,
+      width: Math.floor(width * 0.2),
+      height: height
+    });
+    
+    // Right region
+    regions.push({
+      x: Math.floor(width * 0.8),
+      y: 0,
+      width: Math.floor(width * 0.2),
+      height: height
+    });
+    
+    // Third approach: also add the entire image as a region to ensure we don't miss anything
+    regions.push({
+      x: 0,
+      y: 0,
+      width: width,
+      height: height
+    });
+    
+    // Merge adjacent regions to avoid duplicate processing
     const mergedRegions = mergeAdjacentRegions(regions);
     return mergedRegions;
   };
@@ -396,22 +441,62 @@ export function useTensorflowTextExtraction() {
               ? current : best, variantResults[0])
         : null;
       
-      // Choose between full image or regions
+      // For nicotine pouches, we want to capture ALL text, so we'll combine regional 
+      // and full-image results with special handling for the bottom text (flavor, product name)
+      
+      // Process all region text first
+      const allRegionTexts: string[] = [];
+      
       if (regionTexts.length > 0) {
-        const regionText = regionTexts.map(r => r.text).join('\n\n');
-        
-        // If regions have substantial text, use that, otherwise use best full variant
-        if (regionText.length > 0 && bestFullVariant && 
-            regionText.length > bestFullVariant.text.length * 0.5) {
-          finalText = regionText;
-        } else if (bestFullVariant) {
-          finalText = bestFullVariant.text;
-        }
-        
         // Save the regions for visualization
         setTextRegions(regionTexts);
-      } else if (bestFullVariant) {
-        finalText = bestFullVariant.text;
+        
+        // Group regions by position (top, bottom, middle, etc.)
+        const bottomRegions = regionTexts.filter(r => {
+          const [,y,,] = r.bbox;
+          const isInBottomHalf = y > img.height / 2;
+          return isInBottomHalf;
+        });
+        
+        const topRegions = regionTexts.filter(r => {
+          const [,y,,] = r.bbox;
+          const isInTopHalf = y < img.height / 2;
+          return isInTopHalf;
+        });
+        
+        // Extract text from each region group and add to our list
+        if (topRegions.length > 0) {
+          const topText = topRegions.map(r => r.text).join(' ').trim();
+          if (topText) allRegionTexts.push(topText);
+        }
+        
+        if (bottomRegions.length > 0) {
+          const bottomText = bottomRegions.map(r => r.text).join(' ').trim();
+          if (bottomText) allRegionTexts.push(bottomText);
+        }
+      }
+      
+      // Get the full-image text if available
+      const fullImageText = bestFullVariant ? bestFullVariant.text.trim() : '';
+      
+      // Combine all text, prioritizing region detection for specific areas
+      if (allRegionTexts.length > 0 && fullImageText) {
+        // Include ALL text we found, from both regions and full image
+        // This ensures we don't miss anything, including the small text on the bottom
+        finalText = [...allRegionTexts, fullImageText]
+          .filter(Boolean)  // Remove any empty strings
+          .join('\n\n');
+          
+        // Remove duplicates (full image might contain some of the same text as regions)
+        finalText = removeDuplicateLines(finalText);
+      } 
+      else if (allRegionTexts.length > 0) {
+        // We only have region text
+        finalText = allRegionTexts.join('\n\n');
+      }
+      else if (fullImageText) {
+        // We only have full image text
+        finalText = fullImageText;
       }
       
       // Save the best image variant
@@ -437,25 +522,78 @@ export function useTensorflowTextExtraction() {
     }
   }, []);
   
+  // Helper function to remove duplicate lines when combining text from multiple sources
+  const removeDuplicateLines = (text: string): string => {
+    if (!text) return '';
+    
+    const lines = text.split('\n');
+    const uniqueLines: string[] = [];
+    const seenLines: string[] = [];
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Skip empty lines
+      if (!trimmed) continue;
+      
+      // Normalize the line for comparison (lowercase, remove extra spaces)
+      const normalized = trimmed.toLowerCase().replace(/\s+/g, ' ');
+      
+      // Check if we've seen a similar line
+      let isDuplicate = false;
+      for (let i = 0; i < seenLines.length; i++) {
+        const seen = seenLines[i];
+        // Check for near duplicates (one might be a substring of the other)
+        if (normalized.includes(seen) || seen.includes(normalized)) {
+          // If the current line is longer, replace the shorter one
+          if (trimmed.length > uniqueLines[i].length) {
+            // Replace the shorter line with this one
+            uniqueLines[i] = trimmed;
+            seenLines[i] = normalized;
+          }
+          // Either way, it's a duplicate or we've replaced it
+          isDuplicate = true;
+          break;
+        }
+      }
+      
+      if (!isDuplicate) {
+        uniqueLines.push(trimmed);
+        seenLines.push(normalized);
+      }
+    }
+    
+    return uniqueLines.join('\n');
+  };
+  
   // Function to clean up and improve extracted text
   const postProcessText = (text: string): string => {
     if (!text) return '';
     
-    // Remove extra whitespace
-    let processed = text.replace(/\s+/g, ' ');
+    // Split into lines, process each line separately
+    const lines = text.split('\n');
+    const processedLines = lines.map(line => {
+      // Remove extra whitespace within each line
+      let processed = line.trim().replace(/\s+/g, ' ');
+      
+      // Fix common OCR errors
+      processed = processed
+        .replace(/[|]l/g, 'I') // Fix pipe + l to I
+        .replace(/[0O](?=[a-z])/g, 'O') // Fix digit 0 to letter O when followed by lowercase
+        .replace(/l(?=[0-9])/g, '1') // Fix l to 1 when followed by a number
+        .replace(/\bI\b(?!\s*[a-z])/g, '1') // Fix I to 1 when not followed by lowercase
+        .replace(/S(?=[0-9])/g, '5') // Fix S to 5 when followed by a number
+        .replace(/Z(?=[0-9])/g, '2') // Fix Z to 2 when followed by a number
+        .replace(/[!](?=[0-9])/g, '1') // Fix ! to 1 when followed by a number
+        .replace(/rn/g, 'm') // Fix 'rn' to 'm' (common OCR error)
+        .replace(/cl/g, 'd') // Fix 'cl' to 'd' (common OCR error)
+        .replace(/nn/g, 'nn') // Fix 'nn' issues
+        .replace(/ii/g, 'n'); // Fix 'ii' to 'n' (common OCR error)
+      
+      return processed;
+    });
     
-    // Fix common OCR errors
-    processed = processed
-      .replace(/[|]l/g, 'I') // Fix pipe + l to I
-      .replace(/[0O](?=[a-z])/g, 'O') // Fix digit 0 to letter O when followed by lowercase
-      .replace(/l(?=[0-9])/g, '1') // Fix l to 1 when followed by a number
-      .replace(/\bI\b(?!\s*[a-z])/g, '1') // Fix I to 1 when not followed by lowercase
-      .replace(/S(?=[0-9])/g, '5') // Fix S to 5 when followed by a number
-      .replace(/Z(?=[0-9])/g, '2') // Fix Z to 2 when followed by a number
-      .replace(/[!](?=[0-9])/g, '1'); // Fix ! to 1 when followed by a number
-    
-    // Trim and return
-    return processed.trim();
+    // Filter out empty lines and join
+    return processedLines.filter(line => line.trim()).join('\n');
   };
 
   return {
