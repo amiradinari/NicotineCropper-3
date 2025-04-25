@@ -32,25 +32,32 @@ export default function Result() {
   useEffect(() => {
     const loadFeatureVector = async () => {
       try {
-        // Fetch the vectors.json file
+        // Fetch the vectors.json file from public directory
         const response = await fetch('/data/vectors.json');
         if (!response.ok) {
           throw new Error('Failed to load feature vector');
         }
         
-        const data = await response.text();
-        const vector = loadFeatureVectorFromJSON(data);
-        if (vector) {
-          setFeatureVector(vector);
+        const data = await response.json();
+        // Use the first vector from the vectors array
+        if (data && data.vectors && data.vectors.length > 0) {
+          setFeatureVector(data.vectors[0]);
           console.log('Feature vector loaded successfully');
+        } else {
+          throw new Error('No vectors found in data');
         }
       } catch (error) {
         console.error('Error loading feature vector:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load product identification data",
+        });
       }
     };
     
     loadFeatureVector();
-  }, [setFeatureVector]);
+  }, [setFeatureVector, toast]);
 
   useEffect(() => {
     setStep(3);
