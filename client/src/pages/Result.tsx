@@ -38,7 +38,8 @@ export default function Result() {
         await createCircleCrop(
           photoData.imageData,
           croppedAreaPixels,
-          canvas
+          canvas,
+          isFrontCamera // Pass the front camera flag to know when to flip the image
         );
         
         // Save cropped image data URL for text extraction
@@ -55,7 +56,7 @@ export default function Result() {
     };
 
     renderCroppedImage();
-  }, [photoData, croppedAreaPixels, setStep, setLocation, toast]);
+  }, [photoData, croppedAreaPixels, isFrontCamera, setStep, setLocation, toast]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
