@@ -1,3 +1,4 @@
+
 {
   "vectors": [
     [0.1585, 0.3470, 1.0457, 0.0000, 0.8329, 1.6052, 1.6754, 0.1616, 0.0000, 0.0113, 0.6085],
@@ -11,13 +12,13 @@
       "strength": "Medium"
     },
     {
-      "id": "P002",
+      "id": "P002", 
       "name": "Product Two",
       "strength": "Strong"
     },
     {
       "id": "P003",
-      "name": "Product Three",
+      "name": "Product Three", 
       "strength": "Light"
     }
   ]
