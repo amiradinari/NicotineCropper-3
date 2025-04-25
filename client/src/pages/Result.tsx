@@ -5,8 +5,9 @@ import { useAppContext } from "@/context/AppContext";
 import { Button } from "@/components/ui/button";
 import { createCircleCrop } from "@/lib/imageUtils";
 import { useToast } from "@/hooks/use-toast";
-import { Download, Eye, EyeOff } from "lucide-react";
+import { Download, Eye, EyeOff, Zap } from "lucide-react";
 import TextExtractionPanel from "@/components/TextExtractionPanel";
+import TensorflowTextExtractionPanel from "@/components/TensorflowTextExtractionPanel";
 
 export default function Result() {
   const [, setLocation] = useLocation();
@@ -139,14 +140,22 @@ export default function Result() {
               </>
             ) : (
               <>
-                <Eye className="mr-2 h-5 w-5" />
-                Extract Text from Image
+                <Zap className="mr-2 h-5 w-5" />
+                AI Text Recognition
               </>
             )}
           </Button>
           
           {isTextExtractionEnabled && croppedImageData && (
-            <TextExtractionPanel imageData={croppedImageData} />
+            <>
+              <TensorflowTextExtractionPanel imageData={croppedImageData} />
+              <div className="mt-3 py-2 border-t border-gray-200">
+                <p className="text-xs text-center text-gray-500 mb-2">
+                  Alternative text extraction method
+                </p>
+                <TextExtractionPanel imageData={croppedImageData} />
+              </div>
+            </>
           )}
           
           <Button 
