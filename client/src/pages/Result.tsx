@@ -89,7 +89,7 @@ export default function Result() {
   };
 
   const toggleTextExtraction = () => {
-    setIsTextExtractionEnabled(prev => !prev);
+    setIsTextExtractionEnabled(!isTextExtractionEnabled);
   };
 
   if (!photoData || !croppedAreaPixels) {

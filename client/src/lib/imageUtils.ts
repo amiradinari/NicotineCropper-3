@@ -1,4 +1,10 @@
-import { Area } from "react-easy-crop/types";
+// Define Area interface locally
+interface Area {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 // Create a circular crop of the image using the provided crop area
 export const createCircleCrop = (

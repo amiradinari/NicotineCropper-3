@@ -1,5 +1,12 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Area } from "react-easy-crop/types";
+
+// Define Area type here since the import from react-easy-crop/types is causing issues
+interface Area {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 type PhotoData = {
   imageData: string;
