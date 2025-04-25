@@ -130,6 +130,11 @@ export default function ProductIdentifier({ featureVector }: ProductIdentifierPr
                   <div className="flex items-center">
                     {index === 0 && <Check className="h-4 w-4 text-green-500 mr-2" />}
                     <span className="font-medium">{match.product.name}</span>
+                    {match.product.strength && (
+                      <Badge variant="outline" className="ml-2 text-xs">
+                        {match.product.strength}
+                      </Badge>
+                    )}
                   </div>
                   <Badge variant={index === 0 ? "default" : "outline"}>
                     {(match.similarity * 100).toFixed(1)}% match

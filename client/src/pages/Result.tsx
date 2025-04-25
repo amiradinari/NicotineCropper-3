@@ -28,6 +28,30 @@ export default function Result() {
   const { toast } = useToast();
 
   // Generate the cropped image when the component mounts
+  // Load feature vector from the sample data file
+  useEffect(() => {
+    const loadFeatureVector = async () => {
+      try {
+        // Fetch the vectors.json file
+        const response = await fetch('/data/vectors.json');
+        if (!response.ok) {
+          throw new Error('Failed to load feature vector');
+        }
+        
+        const data = await response.text();
+        const vector = loadFeatureVectorFromJSON(data);
+        if (vector) {
+          setFeatureVector(vector);
+          console.log('Feature vector loaded successfully');
+        }
+      } catch (error) {
+        console.error('Error loading feature vector:', error);
+      }
+    };
+    
+    loadFeatureVector();
+  }, [setFeatureVector]);
+
   useEffect(() => {
     setStep(3);
     
@@ -169,10 +193,18 @@ export default function Result() {
             </>
           )}
           
+          {/* Product Identifier Component */}
+          <div className="mt-2 py-2 border-t border-gray-200">
+            <h3 className="text-sm font-medium text-center text-gray-700 my-2">
+              Product Identification
+            </h3>
+            <ProductIdentifier featureVector={featureVector || undefined} />
+          </div>
+          
           <Button 
             variant="outline"
             onClick={handleStartOver}
-            className="border border-gray-300 text-gray-700 py-3"
+            className="border border-gray-300 text-gray-700 py-3 mt-2"
           >
             Take Another Photo
           </Button>

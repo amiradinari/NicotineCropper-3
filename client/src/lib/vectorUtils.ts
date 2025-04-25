@@ -33,6 +33,7 @@ export function parseFeatureVector(input: string | object): number[] | null {
       return data.vector;
     }
     
+    console.log('Extracted feature vector format:', data);
     return null;
   } catch (error) {
     console.error('Error parsing feature vector:', error);
