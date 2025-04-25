@@ -8,10 +8,21 @@ import { useToast } from "@/hooks/use-toast";
 import { Download, Eye, EyeOff, Zap } from "lucide-react";
 import TextExtractionPanel from "@/components/TextExtractionPanel";
 import TensorflowTextExtractionPanel from "@/components/TensorflowTextExtractionPanel";
+import ProductIdentifier from "@/components/ProductIdentifier";
+import { loadFeatureVectorFromJSON } from "@/lib/vectorUtils";
 
 export default function Result() {
   const [, setLocation] = useLocation();
-  const { setStep, photoData, croppedAreaPixels, isTextExtractionEnabled, setIsTextExtractionEnabled, isFrontCamera } = useAppContext();
+  const { 
+    setStep, 
+    photoData, 
+    croppedAreaPixels, 
+    isTextExtractionEnabled, 
+    setIsTextExtractionEnabled, 
+    isFrontCamera,
+    featureVector,
+    setFeatureVector
+  } = useAppContext();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [croppedImageData, setCroppedImageData] = useState<string | null>(null);
   const { toast } = useToast();
